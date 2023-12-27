@@ -1,7 +1,7 @@
 DB_NAME="productspecification"
-DB_USER="postgres"
+DB_USER="manana"
 DB_PASSWORD="man123"
-DB_OWNER="postgres"
+DB_OWNER="manana"
 
 # Drop existing user if needed
 sudo -u postgres psql -c "DROP USER IF EXISTS $DB_USER;"
