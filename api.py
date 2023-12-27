@@ -1,3 +1,4 @@
+#5 is here too
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
@@ -146,3 +147,46 @@ def delete_product_specification(product_specification_id: int, db: Session = De
     if db_product_specification is None:
         raise HTTPException(status_code=404, detail="Product Specification not found")
     return {"message": "Product Specification deleted successfully"}
+
+
+
+# 1. SELECT ... WHERE 
+@app.get("/equipment/filter/", response_model=List[EquipmentCreate])
+def filter_equipment(manufacturer: str, start_explotation: date, db: Session = Depends(get_db)):
+    equipment = db.query(Equipment).filter(
+        Equipment.manufacturer == manufacturer,
+        Equipment.start_explotation >= start_explotation
+    ).all()
+    return equipment
+
+# 2. JOIN
+@app.get("/product_specifications/join/", response_model=List[ProductSpecificationCreate])
+def get_product_specifications_join(db: Session = Depends(get_db)):
+    product_specifications = db.query(ProductSpecification).options(
+        joinedload(ProductSpecification.equipment),
+        joinedload(ProductSpecification.material)
+    ).all()
+    return product_specifications
+
+# 3. UPDATE with a non-trivial condition
+@app.put("/equipment/update/", response_model=EquipmentCreate)
+def update_equipment_by_condition(threshold_equipment_id: int, updated_equipment: EquipmentCreate, db: Session = Depends(get_db)):
+    updated_rows = db.query(Equipment).filter(
+        Equipment.equipment_id > threshold_equipment_id
+    ).update(updated_equipment.dict(), synchronize_session=False)
+    db.commit()
+    if updated_rows == 0:
+        raise HTTPException(status_code=404, detail="No matching equipment found for update")
+    return updated_equipment
+
+# 4. GROUP BY
+@app.get("/equipment/count_by_manufacturer/", response_model=List[dict])
+def count_equipment_by_manufacturer(db: Session = Depends(get_db)):
+    result = db.query(Equipment.manufacturer, func.count(Equipment.equipment_id)).group_by(Equipment.manufacturer).all()
+    return [{"manufacturer": manufacturer, "equipment_count": count} for manufacturer, count in result]
+
+# 5. Add sorting of results by one of the fields to the request parameters in the API
+@app.get("/equipment/sorted/", response_model=List[EquipmentCreate])
+def get_sorted_equipment(sort_by: str = Query("start_explotation", description="Field to sort by"), db: Session = Depends(get_db)):
+    equipment = db.query(Equipment).order_by(sort_by).all()
+    return equipment
