@@ -30,7 +30,7 @@ class ProductSpecification(Base):
     equipment = relationship('Equipment', back_populates='specifications')
     material = relationship('Material', back_populates='specifications')
 
-DATABASE_URL = "postgresql://postgres:man123@localhost:5432/productspecification"
+DATABASE_URL = "postgresql://manana:man123@localhost:5432/productspecification"
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
